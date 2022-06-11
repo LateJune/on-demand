@@ -2,7 +2,7 @@
 
 import tkinter as tk
 import threading
-import os
+import subprocess
 import base64
 from sshtunnel import SSHTunnelForwarder
 from tkinter import filedialog as tkFileDialog
@@ -15,21 +15,21 @@ def get_ssh_tunnel_form_data():
 
 	ssh_username = form_username.get()
 	ssh_password = form_password.get()
-	remote_ssh_ip=form_remote_ssh_ip.get()
-	remote_ssh_port=form_remote_ssh_port.get()
-	remote_bind_ip=form_remote_bind_ip.get()
-	remote_bind_port=form_remote_bind_port.get()
-	local_bind_ip=form_local_bind_ip.get()
-	local_bind_port=form_local_bind_port.get()
+	remote_ssh_ip = form_remote_ssh_ip.get()
+	remote_ssh_port = form_remote_ssh_port.get()
+	remote_bind_ip = form_remote_bind_ip.get()
+	remote_bind_port = form_remote_bind_port.get()
+	local_bind_ip = form_local_bind_ip.get()
+	local_bind_port = form_local_bind_port.get()
 
-	print(f"[+] Printing values from form...\nssh_username: {ssh_username}\nssh_password: {ssh_password}\nremote_ssh_ip: {remote_ssh_ip}\nremote_ssh_port: {remote_ssh_port}\nremote_bind_ip: {remote_bind_ip}\nremote_bind_port: {remote_bind_port}\nlocal_bind_ip: {local_bind_ip}\nlocal_bind_port: {local_bind_port}\n")
+	print(f"[+] Printing values from form...\nssh_username: {ssh_username}\nssh_password: OMITTED \nremote_ssh_ip: {remote_ssh_ip}\nremote_ssh_port: {remote_ssh_port}\nremote_bind_ip: {remote_bind_ip}\nremote_bind_port: {remote_bind_port}\nlocal_bind_ip: {local_bind_ip}\nlocal_bind_port: {local_bind_port}\n")
 
 	print(f"[+] Running create_server function to create ssh tunnel forwader")
 	ssh_tunnel_server = create_server(ssh_username, ssh_password, remote_ssh_ip, remote_ssh_port, remote_bind_ip, remote_bind_port, local_bind_ip, local_bind_port)
 	if ssh_tunnel_server != None:
 		print(f"[+] Creating ssh tunnel thread")
 		create_ssh_tunnel_thread(ssh_tunnel_server)
-		print(f"[+] Finished, thread ssh tunnel created")
+		print(f"[+] Finished ssh tunnel thread created")
 	else: 
 		print(f"[x] Tunnel server returned as 'None'. Please try again.")
 
@@ -83,38 +83,56 @@ def stop_ssh_tunnel():
 	return None
 
 def create_file_window():
-	filename = tkFileDialog.askopenfilename()
-	print(filename)  
-	file_handle = open(filename, "rb")
-	filebytes= file_handle.read()
-	print(type(filebytes))
-	enc = base64.b64encode(bytes(filebytes))
+	ssh_user = form_username.get()
+	ssh_pass = form_password.get()
+	remote_ssh_ip = form_remote_ssh_ip.get()
+	file_path = tkFileDialog.askopenfilename()
+	file_name = file_path.split("/")[-1]+".b64"
+	print(f"[+] Given file path: {file_path}")
+	file_handle = open(file_path, "rb")
+	file_contents = file_handle.read()
 	file_handle.close()
+	print(f"[+] Closed file handle")
 
-	print(enc)
+	enc_string = base64.b64encode(bytes(file_contents))
+	#print(enc_string)
+	print(f"[+] Opening and writing {file_name} to /tmp")
+	with open(f"/tmp/{file_name}","wb") as new_tmp_file:
+		new_tmp_file.write(enc_string)
 
+	new_tmp_file.close()
+	print(f"[+] Closed file handle")
+
+	print(f"[+] Running secury copy subprocess function")
+	secure_copy(ssh_user, ssh_pass, remote_ssh_ip, file_name) 
+	
 	return None
 
-def secure_copy(enc_string):
-
+def secure_copy(ssh_user, ssh_pass, remote_ssh_ip, file_name):
+	
+	try:
+		print(f"[-] Running scp on {file_name} as {ssh_user} to {remote_ssh_ip}")
+		sub_process = subprocess.run(["sshpass", "-p", f"{ssh_pass}","scp",f"/tmp/{file_name}",f"{ssh_user}@{remote_ssh_ip}:~/Documents/{file_name}"])
+		if sub_process.returncode == 0:
+			print("[+] Action finished sucessfully!")
+		else:
+			print("[x] Failed to copy file to remote host")
+	except Exception as e:
+		print(f"[x] Error occured on subprocess creation, printing exception\n{e}\n")
+		
 	return None
-
 
 ### GUI ### 
-
 window = tk.Tk()
 window.title("SSH Tunnel")
-window.geometry("400x200")
-
+window.geometry("400x220")
 
 master_frame = tk.Frame(padx=20, pady=20)
 master_frame.pack()
 
 ### Username Password Info ###
-
 lable_username = tk.Label(master=master_frame, text="Username")
 lable_username.grid(row=0, column=0)
-
 
 form_username = tk.Entry(master=master_frame, width=14)
 form_username.grid(row=0, column=1)
@@ -129,19 +147,18 @@ form_password.grid(row=1, column=1)
 
 ### Remote SSH Info ###
 label_remote_ssh_ip = tk.Label(master=master_frame, text="Remote SSH IP")
-label_remote_ssh_ip.grid(row=2, column=0,pady=(10,0))
+label_remote_ssh_ip.grid(row=2, column=0,pady=10)
 
 form_remote_ssh_ip = tk.Entry(master=master_frame, width=14)
-form_remote_ssh_ip.grid(row=2, column=1,pady=(10,0))
+form_remote_ssh_ip.grid(row=2, column=1,pady=10)
 form_remote_ssh_ip.insert(1,"192.168.1.174")
 
 label_colon = tk.Label(master=master_frame, text=":")
-label_colon.grid(row=2, column=2,pady=(10,0))
+label_colon.grid(row=2, column=2,pady=10)
 
 form_remote_ssh_port = tk.Entry(master=master_frame, width=5)
-form_remote_ssh_port.grid(row=2, column=3,pady=(10,0))
+form_remote_ssh_port.grid(row=2, column=3,pady=10)
 form_remote_ssh_port.insert(1,"22")
-
 
 ### Remote IP bind Info ###
 lable_remote_bind_ip = tk.Label(master=master_frame,text="Remote Bind IP")
@@ -174,17 +191,16 @@ form_local_bind_port.grid(row=4, column=3)
 form_local_bind_port.insert(1,"5900")
 
 # Submit
-btn_submit = tk.Button(master=master_frame,text="Submit", command=get_ssh_tunnel_form_data, width=5)
-btn_submit.grid(row=5,column=3,pady=5,sticky="se")
+btn_submit = tk.Button(master=master_frame,text="Tunnel", command=get_ssh_tunnel_form_data, width=5, bg="cyan")
+btn_submit.grid(row=5,column=3,pady=5,sticky="s")
 
 # Stop
-btn_stop = tk.Button(master=master_frame,text="Stop", command=stop_ssh_tunnel, width=5)
+btn_stop = tk.Button(master=master_frame,text="Stop", command=stop_ssh_tunnel, width=5, bg="cyan")
 btn_stop.grid(row=5,column=1,pady=5,sticky="s")
 
 # File Window
-btn_activate = tk.Button(master=master_frame,text="Activate", command=create_file_window, width=5)
-btn_activate.grid(row=5,column=0,pady=5,sticky="sw")
+btn_activate = tk.Button(master=master_frame,text="SCP File", command=create_file_window, width=5, bg="green")
+btn_activate.grid(row=5,column=0,pady=5,sticky="s")
 
 ### START LOOP ###
-
 window.mainloop()
