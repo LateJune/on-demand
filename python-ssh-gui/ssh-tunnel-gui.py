@@ -6,7 +6,6 @@ import subprocess
 import base64
 from sshtunnel import SSHTunnelForwarder
 from tkinter import filedialog as tkFileDialog
-from time import sleep
 
 
 def get_ssh_tunnel_form_data():
@@ -112,6 +111,8 @@ def secure_copy(ssh_user, ssh_pass, remote_ssh_ip, file_name):
 	
 	try:
 		print(f"[-] Running scp on {file_name} as {ssh_user} to {remote_ssh_ip}")
+		# Windows Adaption
+		#sub_process = subprocess.run(["wsl.exe", "bash","-c",f"sshpass -p {ssh_pass} scp {file_name} {ssh_user}@{remote_ssh_ip}:~/Documents/{file_name}"])
 		sub_process = subprocess.run(["sshpass", "-p", f"{ssh_pass}","scp",f"/tmp/{file_name}",f"{ssh_user}@{remote_ssh_ip}:~/Documents/{file_name}"])
 		if sub_process.returncode == 0:
 			print("[+] Action finished sucessfully!")
