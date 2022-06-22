@@ -8,6 +8,7 @@ from sshtunnel import SSHTunnelForwarder
 from tkinter import filedialog as tkFileDialog
 
 
+
 def get_ssh_tunnel_form_data():
 	print("[-] Begin get form items")
 	global ssh_tunnel_server
@@ -61,6 +62,7 @@ def create_ssh_tunnel_thread(server):
 def stop_ssh_tunnel():
 	# Simpler try or fail log and continue
 	# Unless the server has been started, the execption will always hit when trying to convert the value to a string
+	global ssh_tunnel_server
 	try:
 		print(str(ssh_tunnel_server))
 		ssh_tunnel_server.stop()
@@ -85,13 +87,13 @@ def create_file_window():
 
 	enc_string = base64.b64encode(bytes(file_contents))
 	# Windows Adaption
-	#print(f"[+] Opening and writing {file_name} to C:\Windows\Temp")
-	#with open("C:\Windows\Temp\{file_name}","wb") as new_tmp_file:
-	#	new_tmp_file.write(enc_string)
-	# Linux adaption
-	print(f"[+] Opening and writing {file_name} to /tmp")
-	with open(f"/tmp/{file_name}","wb") as new_tmp_file:
+	print(f"[+] Opening and writing {file_name} to C:\Windows\Temp")
+	with open(f"C:\\Windows\\Temp\\{file_name}","wb") as new_tmp_file:
 		new_tmp_file.write(enc_string)
+	# Linux adaption
+	#print(f"[+] Opening and writing {file_name} to /tmp")
+	#with open(f"/tmp/{file_name}","wb") as new_tmp_file:
+	#	new_tmp_file.write(enc_string)
 
 	new_tmp_file.close()
 	print(f"[+] Closed file handle")
@@ -106,8 +108,8 @@ def secure_copy(ssh_user, ssh_pass, remote_ssh_ip, file_name):
 	try:
 		print(f"[-] Running scp on {file_name} as {ssh_user} to {remote_ssh_ip}")
 		# Windows Adaption
-		#sub_process = subprocess.run(["wsl.exe", "bash","-c",f"sshpass -p {ssh_pass} scp {file_name} {ssh_user}@{remote_ssh_ip}:~/Documents/{file_name}"])
-		sub_process = subprocess.run(["sshpass", "-p", f"{ssh_pass}","scp",f"/tmp/{file_name}",f"{ssh_user}@{remote_ssh_ip}:~/Documents/{file_name}"])
+		sub_process = subprocess.run(["wsl.exe", "bash","-c",f"sshpass -p {ssh_pass} scp '/mnt/c/Windows/Temp/{file_name}' {ssh_user}@{remote_ssh_ip}:~/Documents/{file_name}"])
+		#sub_process = subprocess.run(["sshpass", "-p", f"{ssh_pass}","scp",f"/tmp/{file_name}",f"{ssh_user}@{remote_ssh_ip}:~/Documents/{file_name}"])
 		if sub_process.returncode == 0:
 			print("[+] Action finished sucessfully!")
 		else:
@@ -146,7 +148,7 @@ label_remote_ssh_ip.grid(row=2, column=0,pady=10)
 
 form_remote_ssh_ip = tk.Entry(master=master_frame, width=14)
 form_remote_ssh_ip.grid(row=2, column=1,pady=10)
-form_remote_ssh_ip.insert(1,"192.168.1.174")
+form_remote_ssh_ip.insert(1,"192.168.2.144")
 
 label_colon = tk.Label(master=master_frame, text=":")
 label_colon.grid(row=2, column=2,pady=10)
