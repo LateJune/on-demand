@@ -59,23 +59,13 @@ def create_ssh_tunnel_thread(server):
 	return None
 
 def stop_ssh_tunnel():
+	# Simpler try or fail log and continue
+	# Unless the server has been started, the execption will always hit when trying to convert the value to a string
 	try:
-		server_stats_list = str(ssh_tunnel_server).split("\n")
-		server_run_status = None
-
-		for entry in server_stats_list:
-			if "status:" in entry:
-				server_run_status = entry
-
-		if server_run_status == "status: started":
-			print(f"[+] Attempting to stop, printing stats")
-			ssh_tunnel_server.stop()
-			if "status: not started" in str(ssh_tunnel_server):
-				print("[-] Server stopped")
-			else:
-				print(f"[-] Unable to stop ssh tunnel server, printing server stats\n{ssh_tunnel_server}")
-		else:
-			print("[x] Server is not running")
+		print(str(ssh_tunnel_server))
+		ssh_tunnel_server.stop()
+		ssh_tunnel_server=None
+		print("[-] Server stopped")
 	except Exception as e:
 		print(f"[x] Server never started, printing exception...\n{e}\n")
 	
@@ -94,7 +84,11 @@ def create_file_window():
 	print(f"[+] Closed file handle")
 
 	enc_string = base64.b64encode(bytes(file_contents))
-	#print(enc_string)
+	# Windows Adaption
+	#print(f"[+] Opening and writing {file_name} to C:\Windows\Temp")
+	#with open("C:\Windows\Temp\{file_name}","wb") as new_tmp_file:
+	#	new_tmp_file.write(enc_string)
+	# Linux adaption
 	print(f"[+] Opening and writing {file_name} to /tmp")
 	with open(f"/tmp/{file_name}","wb") as new_tmp_file:
 		new_tmp_file.write(enc_string)
