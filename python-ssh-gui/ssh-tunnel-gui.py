@@ -4,9 +4,9 @@ import tkinter as tk
 import threading
 import subprocess
 import base64
+import re
 from sshtunnel import SSHTunnelForwarder
 from tkinter import filedialog as tkFileDialog
-
 
 
 def get_ssh_tunnel_form_data():
@@ -79,6 +79,7 @@ def create_file_window():
 	remote_ssh_ip = form_remote_ssh_ip.get()
 	file_path = tkFileDialog.askopenfilename()
 	file_name = file_path.split("/")[-1]+".b64"
+	file_name = re.sub("\s+","_",file_name)
 	print(f"[+] Given file path: {file_path}")
 	file_handle = open(file_path, "rb")
 	file_contents = file_handle.read()
