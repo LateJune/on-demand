@@ -8,6 +8,7 @@ try {
 
     if (Test-Path $path){
         Write-Host "A folder already exists at $path"
+        
     }
     
     else {
@@ -16,6 +17,7 @@ try {
     }    
 
     $watcher = New-Object System.IO.FileSystemWatcher
+
     $watcher.Filter = $filter
     $watcher.Path = $path
     $watcher.IncludeSubdirectories = $false
@@ -24,11 +26,14 @@ try {
     $writelog = {
 
         $fileDetails = $event.SourceEventArgs
+
         $name = $fileDetails.Name
         $eventPath = $fileDetails.FullPath
         $changeType = $fileDetails.ChangeType
         $logLine="$(Get-Date), $changeType, $eventPath, $name"
-        Add-Content $tempLogFilePath  $logLine
+        
+        # Path is not being pulled out of variable
+        Add-Content -Path "C:\..\..\..\" -Value $logLine
     }
 
     Register-ObjectEvent $watcher "Created" -Action $writelog

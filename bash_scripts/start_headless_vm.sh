@@ -1,11 +1,11 @@
 #!/bin/bash
 
-vm="Win 10 Ent"
+vm="Win 10 Alpha"
 
 i=0
 while 
 
-        (( $(vboxmanage showvminfo "Win 10 Ent" | grep "Guest Facilities" | wc --words) <=0 ))
+        (( $(vboxmanage showvminfo "$vm" | grep "Guest Facilities" | wc --words) <=0 ))
 
 do 
 
