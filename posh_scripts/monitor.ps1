@@ -1,7 +1,7 @@
 # March 12th 2022 - monitor.ps1
 # Watch folder location for file changes and log changes to file
+. .\variables.ps1
 
-$path = "C:\Users\June\Desktop\Landfill"
 $filter =  "*.*" 
 
 try {   
@@ -16,7 +16,6 @@ try {
     }    
 
     $watcher = New-Object System.IO.FileSystemWatcher
-
     $watcher.Filter = $filter
     $watcher.Path = $path
     $watcher.IncludeSubdirectories = $false
@@ -25,12 +24,11 @@ try {
     $writelog = {
 
         $fileDetails = $event.SourceEventArgs
-
         $name = $fileDetails.Name
         $eventPath = $fileDetails.FullPath
         $changeType = $fileDetails.ChangeType
         $logLine="$(Get-Date), $changeType, $eventPath, $name"
-        Add-Content "C:\Users\June\Desktop\Landfill\Log\log_output.log"  $logLine
+        Add-Content $tempLogFilePath  $logLine
     }
 
     Register-ObjectEvent $watcher "Created" -Action $writelog
@@ -62,4 +60,3 @@ finally {
 
     Write-Warning "Event handler disabled, monitoring ended"
 }
-

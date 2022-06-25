@@ -3,7 +3,6 @@
 source .env
 
 while
-	
 	if [[ $(ls /tmp | grep .b64| wc --words) > 0 ]]
 		then
 			printf "[+] $(ls /tmp | grep .b64| wc --words) New .b64 files in /tmp. Moving to $final_path\n"
