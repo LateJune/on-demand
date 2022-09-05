@@ -18,7 +18,8 @@ def get_ssh_tunnel_form_data():
 	remote_ssh_port = form_remote_ssh_port.get()
 	remote_bind_ip = form_remote_bind_ip.get()
 	remote_bind_port = form_remote_bind_port.get()
-	local_bind_ip = form_local_bind_ip.get()
+	#local_bind_ip = form_local_bind_ip.get()
+	local_bind_ip = "127.0.0.1"
 	local_bind_port = form_local_bind_port.get()
 
 	print(f"[+] Printing values from form...\nssh_username: {ssh_username} \nremote_ssh_ip: {remote_ssh_ip}\nremote_ssh_port: {remote_ssh_port}\nremote_bind_ip: {remote_bind_ip}\nremote_bind_port: {remote_bind_port}\nlocal_bind_ip: {local_bind_ip}\nlocal_bind_port: {local_bind_port}\n")
@@ -39,7 +40,8 @@ def create_server(ssh_username,remote_ssh_ip, remote_ssh_port, remote_bind_ip, r
 		server = SSHTunnelForwarder(
 			(f'{remote_ssh_ip}', int(remote_ssh_port)),
 			ssh_username=ssh_username,
-			ssh_pkey='C:\\Users\\USER\\.ssh\\id_rsa', # Path of SSH Prviate Key
+			#ssh_pkey='C:\\Users\\USER\\.ssh\\id_rsa.pub', # Path of SSH pub Key
+			ssh_pkey='/home/USER/.ssh/id_rsa.pub', # Path of SSH Prviate Key
 			remote_bind_address=(remote_bind_ip, int(remote_bind_port)),
 			local_bind_address=(local_bind_ip, int(local_bind_port))
     	)
@@ -86,13 +88,13 @@ def create_file_window():
 
 	enc_string = base64.b64encode(bytes(file_contents))
 	# Windows Adaption
-	print(f"[+] Opening and writing {file_name} to C:\Windows\Temp")
-	with open(f"C:\\Windows\\Temp\\{file_name}","wb") as new_tmp_file:
-		new_tmp_file.write(enc_string)
-	# Linux Adaption
-	#print(f"[+] Opening and writing {file_name} to /tmp")
-	#with open(f"/tmp/{file_name}","wb") as new_tmp_file:
+	#print(f"[+] Opening and writing {file_name} to C:\Windows\Temp")
+	#with open(f"C:\\Windows\\Temp\\{file_name}","wb") as new_tmp_file:
 	#	new_tmp_file.write(enc_string)
+	# Linux Adaption
+	print(f"[+] Opening and writing {file_name} to /tmp")
+	with open(f"/tmp/{file_name}","wb") as new_tmp_file:
+		new_tmp_file.write(enc_string)
 
 	new_tmp_file.close()
 	print(f"[+] Closed file handle")
@@ -108,9 +110,10 @@ def secure_copy(ssh_user, remote_ssh_ip, file_name):
 		print(f"[-] Running scp on {file_name} as {ssh_user} to {remote_ssh_ip}")
 		# Windows Adaption
 
-		sub_process = subprocess.run(["wsl.exe", "bash","-c",f"scp -i '/home/USER/.ssh/id_rsa' '/mnt/c/Windows/Temp/{file_name}' {ssh_user}@{remote_ssh_ip}:/tmp/{file_name}"])
+		#sub_process = subprocess.run(["wsl.exe", "bash","-c",f"scp -i '/home/USER/.ssh/id_rsa' '/mnt/c/Windows/Temp/{file_name}' {ssh_user}@{remote_ssh_ip}:/tmp/{file_name}"])
 		#sub_process = subprocess.run(["wsl.exe", "bash","-c",f"sshpass -p {ssh_pass} scp '/mnt/c/Windows/Temp/{file_name}' {ssh_user}@{remote_ssh_ip}:/tmp/{file_name}"])
 		#sub_process = subprocess.run(["sshpass", "-p", f"{ssh_pass}","scp",f"/tmp/{file_name}",f"{ssh_user}@{remote_ssh_ip}:~/Documents/{file_name}"])
+		sub_process = subprocess.run(["scp", "-i","/home/jonathan/.ssh/id_rsa.pub",f"/tmp/{file_name}",f"{ssh_user}@{remote_ssh_ip}:~/{file_name}"])
 		if sub_process.returncode == 0:
 			print("[+] Action finished sucessfully!")
 		else:

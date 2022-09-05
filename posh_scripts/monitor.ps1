@@ -1,6 +1,8 @@
 # March 12th 2022 - monitor.ps1
 # Watch folder location for file changes and log changes to file
 . .\variables.ps1
+$startEpochTimeInSeconds = $(Get-Date (Get-Date).ToUniversalTime() -UFormat %s) -as [double]
+$threeMinutesPastEpoch=$($startEpochTimeInSeconds+180.0)
 
 $filter =  "*.*" 
 
@@ -31,26 +33,41 @@ try {
         $eventPath = $fileDetails.FullPath
         $changeType = $fileDetails.ChangeType
         $logLine="$(Get-Date), $changeType, $eventPath, $name"
+
+        Add-Content -Path "C:\Users\USER\Desktop\FileShare\Log\temp_file_create.log" -Value $logLine
         
-        # Path is not being pulled out of variable
-        Add-Content -Path "C:\..\..\..\" -Value $logLine
     }
 
     Register-ObjectEvent $watcher "Created" -Action $writelog
-    #Register-ObjectEvent $watcher "Deleted" -Action $writelog
-    #Register-ObjectEvent $watcher "Changed" -Action $writelog
-    #Register-ObjectEvent $watcher "Renamed" -Action $writelog
 
     do {
-        Wait-Event -Timeout 5
+        Wait-Event -Timeout 2
         Write-Host "." -NoNewline
+		$currentEpochTime=$(Get-Date (Get-Date).ToUniversalTime() -UFormat %s) -as [double]
+		$poshProcesses=$(get-process -name powershell).count
+		
+		
+		if ($(Test-Path $fileSharePath) -eq $true){
+			$isMountFlagPresent=$(Test-Path "$fileSharePath/flag")
+		}
+		
+		if ($poshProcesses -lt 2 -and $isMountFlagPresent -eq $false){
+			Set-Content -Path "$fileSharePath\flag" -Value ""
+			exit
+		}
+		
+		if ($currentEpochTime -gt  $fifteenSecondsPastEpoch){
+			Set-Content -Path "$fileSharePath\flag" -Value ""
+			exit
+		}
+		
     }
     while ($true)
 
 }
 finally {
 
-    Write-Host "Ctrl-C deteted: Entered final block and removing jobs"
+    Write-Host "Ctrl-C detected: Entered final block and removing jobs"
 
     $watcher.EnableRaisingEvents = $false
 
@@ -58,7 +75,7 @@ finally {
     foreach ( $job in $currentJobs ) {
         Write-Host $job.Id, $job.Name
         Stop-Job $job.Id
-        Remove-Job $job.Id
+        Remove-Job $job.Id	
     }
 
     $watcher.Dispose()    
