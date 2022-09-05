@@ -56,7 +56,7 @@ try {
 			exit
 		}
 		
-		if ($currentEpochTime -gt  $fifteenSecondsPastEpoch){
+		if ($currentEpochTime -gt  $threeMinutesPastEpoch){
 			Set-Content -Path "$fileSharePath\flag" -Value ""
 			exit
 		}
