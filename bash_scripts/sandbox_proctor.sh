@@ -10,12 +10,12 @@ function mountShare {
 function unmountShare {
     printf "[-] Unmounting Share VM\n"
     sudo umount $mount_path
+    sleep 5
 }
 
 function startVMAndMount {
     vboxheadless --startvm "$vm" &
     sleep 5
-    printf "[+] Mounting\n"
     mountShare
     printf "[+] Creating active session flag in /tmp/flag\n"
     touch /tmp/flag
@@ -27,7 +27,7 @@ function powerOffAndRestoreVM {
     vboxmanage controlvm "$vm" poweroff
     sleep 5
     printf "[+] Restoring VM\n"
-    vboxmanage snapshot "$vm" restore "Sandbox Ready Snapshot" 
+    vboxmanage snapshot "$vm" restore "Updated Posh Scripts" 
     sleep 5
 }
 
@@ -48,6 +48,7 @@ function resetVMSession {
 function writeBase64FilesToShare {
     printf "[+] $(ls /tmp | grep .b64| wc --words) New .b64 files in /tmp. Moving to $final_path\n"
     ls /tmp | grep .b64 | sudo xargs -r -I{} mv /tmp/{} $final_path
+    sleep 5 
 }
 
 function sessionTimeout {
@@ -55,11 +56,8 @@ function sessionTimeout {
     then
         resetVMSession 
         # Check time sshed & boot users who are in ghost sessions
-    else
-        continue
     fi
 }
-
 
 while
     # 0 == True
@@ -95,22 +93,18 @@ do
             if [[ $is_active_session -eq 0 && $is_b64_file_present -eq 0 && $is_unmount_flag_present -eq 1 ]]
                 then
                 writeBase64FilesToShare
+
             # If unmount flag is present in file share 
             elif [[ $is_unmount_flag_present -eq 0 ]]
                 then 
+                ls /mnt/FileShare
                 unmountShare
 
             else
-                #printf "[-] No .b64 files present"
                 sleep 5
             fi
 
         fi
-
-        #elif [[ $is_active_session -eq 0 && $is_file_share_mounted -eq 1 ]]
-        #    then 
-        #        printf "Active session in progress"
-        #        sleep 5
 
     # If user is not sshed and active session flag is present
     elif [[ $is_user_sshed -eq 1 && $is_active_session -eq 0 ]]
