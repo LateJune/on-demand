@@ -52,22 +52,25 @@ function writeBase64FilesToShare {
 }
 
 function sessionTimeout {
-    if [[ is_user_active_session -eq 0 ]]
-    then
-        resetVMSession 
-        # Check time sshed & boot users who are in ghost sessions
-    fi
+    printf "[X] SSH Session Exipired. Booting user and reseting VM"
+    #resetVMSession
+    sleep 5 
+    # Check time sshed & boot users who are in ghost sessions
 }
+
+# Initialize start of session variable for numerical comparison errors
+start_session_time=0
 
 while
     # 0 == True
     # 1 == False
+    current_run_time=$(date +%s)
     is_user_sshed=$( [[ $(ss | grep ssh | wc --lines) -ne 0 ]]; printf $?)    
     is_file_share_mounted=$( [[ $(ss  |  grep 127.0.0.1:445 | wc --lines) -ne 0 ]]; printf $?)
     is_b64_file_present=$( [[ $(ls /tmp | grep .b64| wc --words) -gt 0 ]]; printf $?)
     is_unmount_flag_present=$( test -f "$mount_path/flag"; printf $?)
     is_active_session=$( test -f "/tmp/flag"; printf $?)
-
+    
     printf "\nis_user_sshed: $is_user_sshed\n"
     printf "is_file_share_mounted: $is_file_share_mounted\n"
     printf "is_b64_file_present: $is_b64_file_present\n"
@@ -77,17 +80,20 @@ while
 do
     if [[ is_user_sshed -eq 0 ]] 
         then
+        currnet_time_difference=$(( $current_run_time - $start_session_time ))
+        printf "\n[---] $current_run_time\n[---] $start_session_time\n[---] Difference: $currnet_time_difference\n\n"
         # If sshed, not active session, and file share is not mounted
         if [[ $is_active_session -eq 1 && $is_file_share_mounted -eq 1 ]]
             then
             startVMAndMount
+            start_session_time=$(date +%s)
             if [[ is_idle -eq 1 ]]
                 then
                 is_idle=0
             fi  
 
         # If is active session and file share is monuted
-        elif [[ $is_active_session -eq 0 && $is_file_share_mounted -eq 0 ]]
+        elif [[ $is_active_session -eq 0 && $is_file_share_mounted -eq 0 && $(( $current_run_time - $start_session_time )) -lt 10 ]]
             then
             # If is active session, .b64 files are present, and no unmount flag present
             if [[ $is_active_session -eq 0 && $is_b64_file_present -eq 0 && $is_unmount_flag_present -eq 1 ]]
@@ -103,6 +109,13 @@ do
             else
                 sleep 5
             fi
+
+        elif [[ $(( $current_run_time - $start_session_time )) -gt 20 ]]
+            then
+                sessionTimeout
+        else
+            printf "[X] Grey Zone, continuing loop after sleep 5"
+            sleep 5
 
         fi
 
