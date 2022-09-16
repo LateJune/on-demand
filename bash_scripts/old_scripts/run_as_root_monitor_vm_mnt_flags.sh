@@ -1,5 +1,42 @@
 #!/bin/bash
 
+### Variables for determining control flow and their default values
+# isUserSSHed = False
+#? isFileShareAvailable = False
+# isFileShareMounted = False 
+# isUnmountFlagPresent = False
+# isEncodedb64FilePresent = False
+# isActiveSandboxSession = False
+
+## Default Behavior - Inactive
+# No user SSHed 
+# Share unmounted
+# VM Paused/Suspended
+
+## Startup Behavior
+# User SSHed
+# VM Resumed
+# Shared mounted
+# Looking for .b64 encoded files to transfer
+
+## Unmount Behavior
+# User SSHed
+# VM Running and Connected
+# Share Unmount flag present --> Unmount share
+# 
+
+## Active Session Behavior
+# User SSHed
+# VM Running and Connected
+# Share Unmounted
+# 
+
+## End of Session Behavior
+# User not SSHed - SSH Tunnel ended
+# VM Revert to previous running snapshot
+#  
+# Reset Flags
+
 source .env
 
 while 
@@ -18,15 +55,16 @@ while
     #printf "active_session_flag_value: $active_session_flag_value (1==false, 0==true)\n"
     [[ $active_session_flag_value -eq 0 ]] && printf "active_session_flag_value: True\n\n" || printf "active_session_flag_value: False\n\n"
     
-    
-	if [[ $(ls /tmp | grep .b64| wc --words) > 0 ]]
-		then
-			printf "[+] $(ls /tmp | grep .b64| wc --words) New .b64 files in /tmp. Moving to $final_path\n"
-			ls /tmp | grep .b64 | sudo xargs -r -I{} mv /tmp/{} $final_path
-		else
-			printf "[x] No new files in /tmp\n"
-	fi
-
+    if [[ $mount_value -gt 1 ]] 
+        then
+	    if [[ $(ls /tmp | grep .b64| wc --words) > 0 ]]
+		    then
+			    printf "[+] $(ls /tmp | grep .b64| wc --words) New .b64 files in /tmp. Moving to $final_path\n"
+			    ls /tmp | grep .b64 | sudo xargs -r -I{} mv /tmp/{} $final_path
+		    else
+			    printf "[x] No new files in /tmp\n"
+	    fi
+    fi
 do
     # Base case, idling
     # Ssh'd user is not present, and no active session
