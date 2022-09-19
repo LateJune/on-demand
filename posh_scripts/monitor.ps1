@@ -44,7 +44,7 @@ try {
         Wait-Event -Timeout 2
         Write-Host "." -NoNewline
 		$currentEpochTime=$(Get-Date (Get-Date).ToUniversalTime() -UFormat %s) -as [double]
-		$poshProcesses=$(get-process -name powershell).countS		
+		$poshProcesses=$(get-process -name powershell).count		
 		
 		if ($(Test-Path $fileSharePath) -eq $true){
 			$isMountFlagPresent=$(Test-Path "$fileSharePath/flag")	
