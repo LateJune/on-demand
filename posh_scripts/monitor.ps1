@@ -2,7 +2,7 @@
 # Watch folder location for file changes and log changes to file
 . .\variables.ps1
 $startEpochTimeInSeconds = $(Get-Date (Get-Date).ToUniversalTime() -UFormat %s) -as [double]
-$threeMinutesPastEpoch=$($startEpochTimeInSeconds+180.0)
+$tenMinutesPastEpoch=$($startEpochTimeInSeconds+600.0)
 
 $filter =  "*.*" 
 
@@ -34,7 +34,7 @@ try {
         $changeType = $fileDetails.ChangeType
         $logLine="$(Get-Date), $changeType, $eventPath, $name"
 
-        Add-Content -Path "C:\Users\USER\Desktop\FileShare\Log\temp_file_create.log" -Value $logLine
+        Add-Content -Path "C:\Users\Dom\Desktop\FileShare\Log\temp_file_create.log" -Value $logLine
         
     }
 
@@ -44,20 +44,22 @@ try {
         Wait-Event -Timeout 2
         Write-Host "." -NoNewline
 		$currentEpochTime=$(Get-Date (Get-Date).ToUniversalTime() -UFormat %s) -as [double]
-		$poshProcesses=$(get-process -name powershell).count
-		
+		$poshProcesses=$(get-process -name powershell).countS		
 		
 		if ($(Test-Path $fileSharePath) -eq $true){
-			$isMountFlagPresent=$(Test-Path "$fileSharePath/flag")
+			$isMountFlagPresent=$(Test-Path "$fileSharePath/flag")	
 		}
 		
 		if ($poshProcesses -lt 2 -and $isMountFlagPresent -eq $false){
+			Write-Host "[+] Powershell processes less than two, writing unmoun flag to FileShare"
 			Set-Content -Path "$fileSharePath\flag" -Value ""
 			exit
 		}
 		
-		if ($currentEpochTime -gt  $threeMinutesPastEpoch){
+		if ($currentEpochTime -gt  $tenMinutesPastEpoch){
+			Write-Host "[+] Ten minute timeout, writing unmount flag to FileShare"
 			Set-Content -Path "$fileSharePath\flag" -Value ""
+			
 			exit
 		}
 		
@@ -67,7 +69,7 @@ try {
 }
 finally {
 
-    Write-Host "Ctrl-C detected: Entered final block and removing jobs"
+    Write-Host "Exception hit, removing job"
 
     $watcher.EnableRaisingEvents = $false
 

@@ -3,12 +3,12 @@
 source .env
 
 function mountShare {
-    printf "[+] Mounting Share VM\n"
+    printf "$(date "+%F %X %Z") [+] Mounting Share VM\n"
     sudo mount -v -t cifs -o username=$user,password=$share_pass,port=$port //$share_ip/$mount_folder $mount_path 
 }
 
 function unmountShare {
-    printf "[-] Unmounting Share VM\n"
+    printf "$(date "+%F %X %Z") [-] Unmounting Share VM\n"
     sudo umount $mount_path
     sleep 5
 }
@@ -17,17 +17,17 @@ function startVMAndMount {
     vboxheadless --startvm "$vm" &
     sleep 5
     mountShare
-    printf "[+] Creating active session flag in /tmp/flag\n"
+    printf "$(date "+%F %X %Z") [+] Creating active session flag in /tmp/flag\n"
     touch /tmp/flag
     sleep 5
 }
 
 function powerOffAndRestoreVM {
-    printf "[-] Turning off VM\n"
+    printf "$(date "+%F %X %Z") [-] Turning off VM\n"
     vboxmanage controlvm "$vm" poweroff
     sleep 5
-    printf "[+] Restoring VM\n"
-    vboxmanage snapshot "$vm" restore "Updated Posh Scripts" 
+    printf "$(date "+%F %X %Z") [+] Restoring VM\n"
+    vboxmanage snapshot "$vm" restore "Sandbox Running Snapshot" 
     sleep 5
 }
 
@@ -46,16 +46,18 @@ function resetVMSession {
 }
 
 function writeBase64FilesToShare {
-    printf "[+] $(ls /tmp | grep .b64| wc --words) New .b64 files in /tmp. Moving to $final_path\n"
+    printf "$(date "+%F %X %Z") [+] $(ls /tmp | grep .b64| wc --words) New .b64 files in /tmp. Moving to $final_path\n"
     ls /tmp | grep .b64 | sudo xargs -r -I{} mv /tmp/{} $final_path
     sleep 5 
 }
 
 function sessionTimeout {
-    printf "[X] SSH Session Exipired. Booting user and reseting VM"
-    #resetVMSession
+    # Find all open and hung sessions, kill all of them using a pid
+    open_sessions=$(pgrep ssh -a | grep pts)
+    printf "$(date "+%F %X %Z") [+] Killing Open Sessions:\n $open_sessions\n"
+    pgrep ssh -a | grep pts | cut -d " " -f 1 | xargs -r -I{} kill -9 {}
+    resetVMSession
     sleep 5 
-    # Check time sshed & boot users who are in ghost sessions
 }
 
 # Initialize start of session variable for numerical comparison errors
@@ -71,17 +73,17 @@ while
     is_unmount_flag_present=$( test -f "$mount_path/flag"; printf $?)
     is_active_session=$( test -f "/tmp/flag"; printf $?)
     
-    printf "\nis_user_sshed: $is_user_sshed\n"
-    printf "is_file_share_mounted: $is_file_share_mounted\n"
-    printf "is_b64_file_present: $is_b64_file_present\n"
-    printf "is_unmount_flag_present: $is_unmount_flag_present\n"
-    printf "is_active_session: $is_active_session\n"
+    #printf "\nis_user_sshed: $is_user_sshed\n"
+    #printf "is_file_share_mounted: $is_file_share_mounted\n"
+    #printf "is_b64_file_present: $is_b64_file_present\n"
+    #printf "is_unmount_flag_present: $is_unmount_flag_present\n"
+    #printf "is_active_session: $is_active_session\n"
 
 do
     if [[ is_user_sshed -eq 0 ]] 
         then
         currnet_time_difference=$(( $current_run_time - $start_session_time ))
-        printf "\n[---] $current_run_time\n[---] $start_session_time\n[---] Difference: $currnet_time_difference\n\n"
+        #printf "\n[---] $current_run_time\n[---] $start_session_time\n[---] Difference: $currnet_time_difference\n\n"
         # If sshed, not active session, and file share is not mounted
         if [[ $is_active_session -eq 1 && $is_file_share_mounted -eq 1 ]]
             then
@@ -93,7 +95,7 @@ do
             fi  
 
         # If is active session and file share is monuted
-        elif [[ $is_active_session -eq 0 && $is_file_share_mounted -eq 0 && $(( $current_run_time - $start_session_time )) -lt 10 ]]
+        elif [[ $is_active_session -eq 0 && $is_file_share_mounted -eq 0 && $(( $current_run_time - $start_session_time )) -lt 300 ]]
             then
             # If is active session, .b64 files are present, and no unmount flag present
             if [[ $is_active_session -eq 0 && $is_b64_file_present -eq 0 && $is_unmount_flag_present -eq 1 ]]
@@ -103,20 +105,18 @@ do
             # If unmount flag is present in file share 
             elif [[ $is_unmount_flag_present -eq 0 ]]
                 then 
-                ls /mnt/FileShare
                 unmountShare
 
             else
                 sleep 5
             fi
 
-        elif [[ $(( $current_run_time - $start_session_time )) -gt 20 ]]
+        elif [[ $(( $current_run_time - $start_session_time )) -gt 500 ]]
             then
                 sessionTimeout
         else
-            printf "[X] Grey Zone, continuing loop after sleep 5"
-            sleep 5
-
+            # If reached this point, take a breath, and continue looping
+            sleep 2
         fi
 
     # If user is not sshed and active session flag is present
@@ -130,7 +130,7 @@ do
             printf "."
         else
             is_idle=1
-            printf "[+] Idling...\n"
+            printf "$(date "+%F %X %Z") [+] Idling...\n"
         fi
     fi
 done
