@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-# Edited Sept 5th 2022
-
 import tkinter as tk
 import threading
 import subprocess
@@ -20,7 +18,6 @@ def get_ssh_tunnel_form_data():
 	remote_ssh_port = form_remote_ssh_port.get()
 	remote_bind_ip = form_remote_bind_ip.get()
 	remote_bind_port = form_remote_bind_port.get()
-	#local_bind_ip = form_local_bind_ip.get()
 	local_bind_ip = "127.0.0.1"
 	local_bind_port = form_local_bind_port.get()
 
@@ -42,8 +39,11 @@ def create_server(ssh_username,remote_ssh_ip, remote_ssh_port, remote_bind_ip, r
 		server = SSHTunnelForwarder(
 			(f'{remote_ssh_ip}', int(remote_ssh_port)),
 			ssh_username=ssh_username,
-			#ssh_pkey='C:\\Users\\USER\\.ssh\\id_rsa.pub', # Path of SSH pub Key
-			ssh_pkey='/home/USER/.ssh/id_rsa.pub', # Path of SSH Prviate Key
+			# Path of SSH Prviate Key
+			# Windows
+			ssh_pkey='C:\\Users\\USER\\.ssh\\id_rsa',
+			# Linux 
+			#ssh_pkey='/home/USER/.ssh/id_rsa', 
 			remote_bind_address=(remote_bind_ip, int(remote_bind_port)),
 			local_bind_address=(local_bind_ip, int(local_bind_port))
     	)
@@ -90,13 +90,13 @@ def create_file_window():
 
 	enc_string = base64.b64encode(bytes(file_contents))
 	# Windows Adaption
-	#print(f"[+] Opening and writing {file_name} to C:\Windows\Temp")
-	#with open(f"C:\\Windows\\Temp\\{file_name}","wb") as new_tmp_file:
-	#	new_tmp_file.write(enc_string)
-	# Linux Adaption
-	print(f"[+] Opening and writing {file_name} to /tmp")
-	with open(f"/tmp/{file_name}","wb") as new_tmp_file:
+	print(f"[+] Opening and writing {file_name} to C:\Windows\Temp")
+	with open(f"C:\\Windows\\Temp\\{file_name}","wb") as new_tmp_file:
 		new_tmp_file.write(enc_string)
+	# Linux Adaption
+	#print(f"[+] Opening and writing {file_name} to /tmp")
+	#with open(f"/tmp/{file_name}","wb") as new_tmp_file:
+	#	new_tmp_file.write(enc_string)
 
 	new_tmp_file.close()
 	print(f"[+] Closed file handle")
@@ -110,12 +110,11 @@ def secure_copy(ssh_user, remote_ssh_ip, file_name):
 	
 	try:
 		print(f"[-] Running scp on {file_name} as {ssh_user} to {remote_ssh_ip}")
-		# Windows Adaption
-
-		#sub_process = subprocess.run(["wsl.exe", "bash","-c",f"scp -i '/home/USER/.ssh/id_rsa' '/mnt/c/Windows/Temp/{file_name}' {ssh_user}@{remote_ssh_ip}:/tmp/{file_name}"])
-		#sub_process = subprocess.run(["wsl.exe", "bash","-c",f"sshpass -p {ssh_pass} scp '/mnt/c/Windows/Temp/{file_name}' {ssh_user}@{remote_ssh_ip}:/tmp/{file_name}"])
-		#sub_process = subprocess.run(["sshpass", "-p", f"{ssh_pass}","scp",f"/tmp/{file_name}",f"{ssh_user}@{remote_ssh_ip}:~/Documents/{file_name}"])
-		sub_process = subprocess.run(["scp", "-i","/home/jonathan/.ssh/id_rsa.pub",f"/tmp/{file_name}",f"{ssh_user}@{remote_ssh_ip}:~/{file_name}"])
+		# Windows
+		sub_process = subprocess.run(["wsl.exe", "bash","-c",f"scp -i '/home/USER/.ssh/id_rsa' '/mnt/c/Windows/Temp/{file_name}' {ssh_user}@{remote_ssh_ip}:/tmp/{file_name}"])
+		
+		# Linux
+		#sub_process = subprocess.run(["scp", "-i","/home/jonathan/.ssh/id_rsa.pub",f"/tmp/{file_name}",f"{ssh_user}@{remote_ssh_ip}:/tmp/{file_name}"])
 		if sub_process.returncode == 0:
 			print("[+] Action finished sucessfully!")
 		else:
@@ -139,13 +138,7 @@ lable_username.grid(row=0, column=0)
 
 form_username = tk.Entry(master=master_frame, width=14)
 form_username.grid(row=0, column=1)
-form_username.insert(1,"")
-
-#lable_password = tk.Label(master=master_frame, text="Password")
-#lable_password.grid(row=1, column=0)
-#form_password = tk.Entry(master=master_frame, width=14)
-#form_password.config(show="*")
-#form_password.grid(row=1, column=1)
+form_username.insert(1,"ubuntu")
 
 ### Remote SSH Info ###
 label_remote_ssh_ip = tk.Label(master=master_frame, text="Remote SSH IP")
@@ -153,7 +146,7 @@ label_remote_ssh_ip.grid(row=1, column=0,pady=(10,0))
 
 form_remote_ssh_ip = tk.Entry(master=master_frame, width=14)
 form_remote_ssh_ip.grid(row=1, column=1,pady=(10,0))
-form_remote_ssh_ip.insert(1,"IP")
+form_remote_ssh_ip.insert(1,"135.148.234.102")
 
 label_colon = tk.Label(master=master_frame, text=":")
 label_colon.grid(row=1, column=2,pady=(10,0))
@@ -181,10 +174,8 @@ form_remote_bind_port.insert(1,"5900")
 local_bind_ip = tk.Label(master=master_frame,text="Local Bind IP")
 local_bind_ip.grid(row=3,column=0)
 
-#form_local_bind_ip = tk.Entry(master=master_frame, width=14)
 form_local_bind_ip = tk.Label(master=master_frame,text="127.0.0.1")
 form_local_bind_ip.grid(row=3, column=1)
-#form_local_bind_ip.insert(0,"127.0.0.1")
 
 colon = tk.Label(master=master_frame,text=":")
 colon.grid(row=3, column=2)
@@ -204,7 +195,6 @@ btn_submit.grid(row=4,column=1,pady=(10,0),sticky="s")
 # Stop
 btn_stop = tk.Button(master=master_frame,text="Stop", command=stop_ssh_tunnel, width=5, bg="cyan")
 btn_stop.grid(row=4,column=3,pady=(10,0),sticky="s")
-
 
 ### START LOOP ###
 window.mainloop()
