@@ -153,7 +153,7 @@ lable_username.grid(row=0, column=0)
 
 form_username = tk.Entry(master=master_frame, width=14)
 form_username.grid(row=0, column=1)
-form_username.insert(1,"ubuntu")
+form_username.insert(1,"")
 
 ### Remote SSH Info ###
 label_remote_ssh_ip = tk.Label(master=master_frame, text="Remote SSH IP")
@@ -161,7 +161,7 @@ label_remote_ssh_ip.grid(row=1, column=0,pady=(10,0))
 
 form_remote_ssh_ip = tk.Entry(master=master_frame, width=14)
 form_remote_ssh_ip.grid(row=1, column=1,pady=(10,0))
-form_remote_ssh_ip.insert(1,"135.148.234.102")
+form_remote_ssh_ip.insert(1,"")
 
 label_colon = tk.Label(master=master_frame, text=":")
 label_colon.grid(row=1, column=2,pady=(10,0))
