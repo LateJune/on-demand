@@ -15,6 +15,9 @@
 
 . .\variables.ps1
 
+Write-Warning "Newly copied files will be logged here!!"
+Write-Warning "Please close this Powershell window once you are finished!!"
+
 try{
     while ($true) {
         if (Test-Path $tempLogFilePath) {
@@ -33,17 +36,16 @@ try{
 
                     try {
                         # Get b64, decode and Write to file
-                        Write-Host "[+] Attmpting to decode the file: $createdFileName"
+                        Write-Host "[+] Decoding file: $createdFileName"
                         $base64Data = Get-Content "$createdFilePath"
                         # Convert bytes and write to file path
-                        Write-Host "[+] Attempting to write file to path: $newfilePath"
+                        Write-Host "[+] Writing file to path: $newfilePath"
                         $bytes = [Convert]::FromBase64String($base64Data)
                         [IO.File]::WriteAllBytes($newfilePath, $bytes)
                         # Assign newly decoded data to a variable and write to console
                         $decodedData = ([System.Text.Encoding]::ASCII.GetString([System.Convert]::FromBase64String($base64Data)))
                         #Write-Host "[+] Base64 data from file: $base64Data"
                         #Write-Host "[+] Decoded base64: $decodedData"
-                        Write-Host "[+] Writing temp line to new log file"
                         Add-Content -path $finishedLogFilePath -Value $createdFileLine
                
     
@@ -63,13 +65,13 @@ try{
             Write-Host "[x] Log file location does not exist"
         }
 
-        Write-Host "[.] End of loop, sleeping 5 seconds"
+        #Write-Host "[.] End of loop, sleeping 5 seconds"
         Start-Sleep -Seconds 5
     }
 }
 finally{
     
-    Write-Host "[+] Ctrl-C detected, writing unmount flag to fileshare"
+    Write-Host "[+] Event handler stopped, writing unmount flag to fileshare"
     Set-Content -Path "$fileSharePath\flag" -Value ""
     exit
 }
