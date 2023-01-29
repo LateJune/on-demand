@@ -22,12 +22,15 @@ import base64
 import re
 from sshtunnel import SSHTunnelForwarder
 from tkinter import filedialog as tkFileDialog
+global file_count
+file_count = 0
+
 
 
 def get_ssh_tunnel_form_data():
 	print("[-] Begin get form items")
 	global ssh_tunnel_server
-
+	
 	ssh_username = form_username.get()
 	remote_ssh_ip = form_remote_ssh_ip.get()
 	remote_ssh_port = form_remote_ssh_port.get()
@@ -62,7 +65,7 @@ def create_server(ssh_username,remote_ssh_ip, remote_ssh_port, remote_bind_ip, r
 			remote_bind_address=(remote_bind_ip, int(remote_bind_port)),
 			local_bind_address=(local_bind_ip, int(local_bind_port))
     	)
-		print(f"[-] Server status:\n{server}")
+		#print(f"[-] Server status:\n{server}")
 		return server
 	
 	except Exception as e:
@@ -74,6 +77,7 @@ def create_ssh_tunnel_thread(server):
 	print(f"[-] Starting server thread")
 	ssh_tunnel_thread = threading.Thread(target=server.start())
 	print(f"[-] Server Thread:\n{ssh_tunnel_thread}\n{threading.current_thread}")
+	# Create try fail, check to see if server thread is already created otherwise pass
 	
 	return None
 
@@ -92,11 +96,12 @@ def stop_ssh_tunnel():
 	return None
 
 def create_file_window():
+	global file_count
 	ssh_user = form_username.get()
 	remote_ssh_ip = form_remote_ssh_ip.get()
 	file_path = tkFileDialog.askopenfilename()
-	file_name = file_path.split("/")[-1]+".b64"
-	file_name = re.sub("\s+","_",file_name)
+	file_name = (re.sub("[^\w\.]","_",file_path.split("/")[-1]))+f"_{file_count}"+".b64"
+	file_count = file_count + 1
 	print(f"[+] Given file path: {file_path}")
 	file_handle = open(file_path, "rb")
 	file_contents = file_handle.read()
@@ -126,10 +131,10 @@ def secure_copy(ssh_user, remote_ssh_ip, file_name):
 	try:
 		print(f"[-] Running scp on {file_name} as {ssh_user} to {remote_ssh_ip}")
 		# Windows
-		sub_process = subprocess.run(["wsl.exe", "bash","-c",f"scp -i '/home/USER/.ssh/id_rsa' '/mnt/c/Windows/Temp/{file_name}' {ssh_user}@{remote_ssh_ip}:/tmp/{file_name}"])
+		#sub_process = subprocess.run(["wsl.exe", "bash","-c",f"scp -i '/home/USER/.ssh/id_rsa' '/mnt/c/Windows/Temp/{file_name}' '{ssh_user}@{remote_ssh_ip}:/tmp/{file_name}'"])
 		
 		# Linux
-		#sub_process = subprocess.run(["scp", "-i","/home/jonathan/.ssh/id_rsa.pub",f"/tmp/{file_name}",f"{ssh_user}@{remote_ssh_ip}:/tmp/{file_name}"])
+		sub_process = subprocess.run(["scp", "-i","/home/jonathan/.ssh/id_rsa.pub",f"/tmp/{file_name}",f"{ssh_user}@{remote_ssh_ip}:/tmp/{file_name}"])
 		if sub_process.returncode == 0:
 			print("[+] Action finished sucessfully!")
 		else:
@@ -153,7 +158,7 @@ lable_username.grid(row=0, column=0)
 
 form_username = tk.Entry(master=master_frame, width=14)
 form_username.grid(row=0, column=1)
-form_username.insert(1,"")
+form_username.insert(1,"jonathan")
 
 ### Remote SSH Info ###
 label_remote_ssh_ip = tk.Label(master=master_frame, text="Remote SSH IP")
@@ -161,7 +166,7 @@ label_remote_ssh_ip.grid(row=1, column=0,pady=(10,0))
 
 form_remote_ssh_ip = tk.Entry(master=master_frame, width=14)
 form_remote_ssh_ip.grid(row=1, column=1,pady=(10,0))
-form_remote_ssh_ip.insert(1,"")
+form_remote_ssh_ip.insert(1,"127.0.0.1")
 
 label_colon = tk.Label(master=master_frame, text=":")
 label_colon.grid(row=1, column=2,pady=(10,0))
@@ -197,7 +202,7 @@ colon.grid(row=3, column=2)
 
 form_local_bind_port = tk.Entry(master=master_frame,width=5)
 form_local_bind_port.grid(row=3, column=3)
-form_local_bind_port.insert(1,"5900")
+form_local_bind_port.insert(1,"4444")
 
 # File Window
 btn_activate = tk.Button(master=master_frame,text="SCP File", command=create_file_window, width=5, bg="green")
