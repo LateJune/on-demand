@@ -100,7 +100,10 @@ def create_file_window():
 	ssh_user = form_username.get()
 	remote_ssh_ip = form_remote_ssh_ip.get()
 	file_path = tkFileDialog.askopenfilename()
-	file_name = (re.sub("[^\w\.]","_",file_path.split("/")[-1]))+f"_{file_count}"+".b64"
+	if file_path == '':
+		return None		
+	file_name = (re.sub("[^\w\.]","_",file_path.split("/")[-1]))+".b64"
+	print(file_name)
 	file_count = file_count + 1
 	print(f"[+] Given file path: {file_path}")
 	file_handle = open(file_path, "rb")
