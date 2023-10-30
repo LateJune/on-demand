@@ -128,10 +128,10 @@ def secure_copy(ssh_user, remote_ssh_ip, file_name):
 	try:
 		print(f"[-] Running scp on {file_name} as {ssh_user} to {remote_ssh_ip}")
 		# Windows
-		#sub_process = subprocess.run(["wsl.exe", "bash","-c",f"scp -i '/home/USER/.ssh/id_rsa' '/mnt/c/Windows/Temp/{file_name}' '{ssh_user}@{remote_ssh_ip}:/tmp/{file_name}'"])
+		sub_process = subprocess.run(["wsl.exe", "bash","-c",f"scp -i '/home/USER/.ssh/id_rsa' '/mnt/c/Windows/Temp/{file_name}' '{ssh_user}@{remote_ssh_ip}:/tmp/{file_name}'"])
 		
 		# Linux
-		sub_process = subprocess.run(["scp", "-i","/home/jonathan/.ssh/id_rsa.pub",f"/tmp/{file_name}",f"{ssh_user}@{remote_ssh_ip}:/tmp/{file_name}"])
+		#sub_process = subprocess.run(["scp", "-i","/home/jonathan/.ssh/id_rsa.pub",f"/tmp/{file_name}",f"{ssh_user}@{remote_ssh_ip}:/tmp/{file_name}"])
 		if sub_process.returncode == 0:
 			print("[+] Action finished sucessfully!")
 		else:
@@ -155,7 +155,7 @@ lable_username.grid(row=0, column=0)
 
 form_username = tk.Entry(master=master_frame, width=14)
 form_username.grid(row=0, column=1)
-form_username.insert(1,"jonathan")
+form_username.insert(1,"USERNAME")
 
 ### Remote SSH Info ###
 label_remote_ssh_ip = tk.Label(master=master_frame, text="Remote SSH IP")
@@ -163,7 +163,7 @@ label_remote_ssh_ip.grid(row=1, column=0,pady=(10,0))
 
 form_remote_ssh_ip = tk.Entry(master=master_frame, width=14)
 form_remote_ssh_ip.grid(row=1, column=1,pady=(10,0))
-form_remote_ssh_ip.insert(1,"127.0.0.1")
+form_remote_ssh_ip.insert(1,"EXTERNAL IP")
 
 label_colon = tk.Label(master=master_frame, text=":")
 label_colon.grid(row=1, column=2,pady=(10,0))
