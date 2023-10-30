@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (C) 2022 Jonathan Soler
+# Copyright (C) 2023 Jonathan Soler
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -15,10 +15,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see https://www.gnu.org/licenses/.
 
-source .env
+source .env 
 
 function mountShare {
-    printf "$(date "+%F %X %Z") [+] Mounting Share VM\n"
+    printf "\n$(date "+%F %X %Z") [+] Mounting Share VM\n"
     sudo mount -v -t cifs -o username=$user,password=$share_pass,port=$port //$share_ip/$mount_folder $mount_path 
 }
 
@@ -75,6 +75,33 @@ function sessionTimeout {
     sleep 5 
 }
 
+function checkIpSshed {
+    last_logged_in_ip=$(last | grep "still logged in" | awk '{print $3}' | head -n 1)
+    is_ip_in_ssh_db=$( [[ $(cat ssh_ips_db.xml | grep $last_logged_in_ip | wc --words) -ne 0 ]]; printf $?)
+
+    if [[ $(last | grep "still logged in" | awk '{print $3}' | grep -E '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'| wc --lines) -eq 0 ]]
+        then 
+        return 1
+
+    elif [[ $is_ip_in_ssh_db -eq 0 ]]
+        then
+        printf "$(date "+%F %X %Z") [+] IP address $last_logged_in_ip currently sshed"
+        return 0
+    else 
+        ip_info=$(wget -qO- ip-api.com/xml/$last_logged_in_ip | grep -E 'countryCode|region|city|zip|lat|lon|isp|query')
+        is_country_US=$([[ $(echo $ip_info | grep -E 'countryCode' | grep -E 'US' | wc --words) -ne 0 ]]; printf $?)
+
+        if [[ $is_country_US -eq 0 ]]
+            then
+            printf "$(date "+%F %X %Z") [+] Added $last_logged_in_ip to ssh_ips_db.xml\n" 
+            printf "$ip_info\n" >> ssh_ips_db.xml
+            return 0
+        else 
+            return 1
+        fi
+    fi
+}
+
 # Initialize start of session variable for numerical comparison errors
 start_session_time=0
 
@@ -82,7 +109,7 @@ while
     # 0 == True
     # 1 == False
     current_run_time=$(date +%s)
-    is_user_sshed=$( [[ $(ss | grep ssh | wc --lines) -ne 0 ]]; printf $?)    
+    is_user_sshed=$( [[ $(checkIpSshed) -eq 0 ]];printf $? )
     is_file_share_mounted=$( [[ $(ss  |  grep 127.0.0.1:445 | wc --lines) -ne 0 ]]; printf $?)
     is_b64_file_present=$( [[ $(ls /tmp | grep .b64| wc --words) -gt 0 ]]; printf $?)
     is_unmount_flag_present=$( test -f "$mount_path/flag"; printf $?)
@@ -98,7 +125,6 @@ do
     if [[ is_user_sshed -eq 0 ]] 
         then
         currnet_time_difference=$(( $current_run_time - $start_session_time ))
-        #printf "\n[---] $current_run_time\n[---] $start_session_time\n[---] Difference: $currnet_time_difference\n\n"
         # If sshed, not active session, and file share is not mounted
         if [[ $is_active_session -eq 1 && $is_file_share_mounted -eq 1 ]]
             then
