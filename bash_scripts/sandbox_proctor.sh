@@ -75,30 +75,12 @@ function sessionTimeout {
     sleep 5 
 }
 
-function checkIpSshed {
-    last_logged_in_ip=$(last | grep "still logged in" | awk '{print $3}' | head -n 1)
-    is_ip_in_ssh_db=$( [[ $(cat ssh_ips_db.xml | grep $last_logged_in_ip | wc --words) -ne 0 ]]; printf $?)
-
-    if [[ $(last | grep "still logged in" | awk '{print $3}' | grep -E '[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+'| wc --lines) -eq 0 ]]
-        then 
-        return 1
-
-    elif [[ $is_ip_in_ssh_db -eq 0 ]]
-        then
-        printf "$(date "+%F %X %Z") [+] IP address $last_logged_in_ip currently sshed"
+function checkIPSshed {
+    ssh_sessions=$(last | grep "still logged in" | grep "pts"| wc -l )
+    if [[ "$ssh_sessions" -gt 0 ]]; then
         return 0
-    else 
-        ip_info=$(wget -qO- ip-api.com/xml/$last_logged_in_ip | grep -E 'countryCode|region|city|zip|lat|lon|isp|query')
-        is_country_US=$([[ $(echo $ip_info | grep -E 'countryCode' | grep -E 'US' | wc --words) -ne 0 ]]; printf $?)
-
-        if [[ $is_country_US -eq 0 ]]
-            then
-            printf "$(date "+%F %X %Z") [+] Added $last_logged_in_ip to ssh_ips_db.xml\n" 
-            printf "$ip_info\n" >> ssh_ips_db.xml
-            return 0
-        else 
-            return 1
-        fi
+    else
+        return 1
     fi
 }
 
@@ -108,18 +90,19 @@ start_session_time=0
 while
     # 0 == True
     # 1 == False
-    current_run_time=$(date +%s)
-    is_user_sshed=$( [[ $(checkIpSshed) -eq 0 ]];printf $? )
+    checkIPSshed
+    is_user_sshed=$?
     is_file_share_mounted=$( [[ $(ss  |  grep 127.0.0.1:445 | wc --lines) -ne 0 ]]; printf $?)
     is_b64_file_present=$( [[ $(ls /tmp | grep .b64| wc --words) -gt 0 ]]; printf $?)
     is_unmount_flag_present=$( test -f "$mount_path/flag"; printf $?)
     is_active_session=$( test -f "/tmp/flag"; printf $?)
-    
-    #printf "\nis_user_sshed: $is_user_sshed\n"
-    #printf "is_file_share_mounted: $is_file_share_mounted\n"
-    #printf "is_b64_file_present: $is_b64_file_present\n"
-    #printf "is_unmount_flag_present: $is_unmount_flag_present\n"
-    #printf "is_active_session: $is_active_session\n"
+    current_run_time=$(date +%s)
+
+    printf "\nis_user_sshed: $is_user_sshed\n"
+    printf "is_file_share_mounted: $is_file_share_mounted\n"
+    printf "is_b64_file_present: $is_b64_file_present\n"
+    printf "is_unmount_flag_present: $is_unmount_flag_present\n"
+    printf "is_active_session: $is_active_session\n"
 
 do
     if [[ is_user_sshed -eq 0 ]] 
